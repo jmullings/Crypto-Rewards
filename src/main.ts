@@ -6,18 +6,11 @@ class CryptoEpochRewards {
   calculateRewardPeso(
     stakedAmountPeso: number,
     stakeDuration: { start: Date; finish: Date },
-    profitShareAmount: number,
-    marketCapAmount: number
+    monthlyRewardRate: number,
+    marketCapAmount: number,
+    profitShareAmount: number
   ): number {
-    if (stakedAmountPeso <= 0) {
-      return 0;
-    }
-
-    if (profitShareAmount <= 0) {
-      return 0;
-    }
-
-    if (marketCapAmount <= 0) {
+    if (stakedAmountPeso <= 0 || monthlyRewardRate <= 0 || marketCapAmount <= 0 || profitShareAmount <= 0) {
       return 0;
     }
 
@@ -33,8 +26,10 @@ class CryptoEpochRewards {
       return 0;
     }
 
-    const rewardRatePeso = profitShareAmount / marketCapAmount;
-    const rewardAmountPeso = (stakedAmountPeso * rewardRatePeso * stakeDurationDays);
+    const profitShareFactor = profitShareAmount / marketCapAmount;
+    const adjustedRewardRate = (monthlyRewardRate / 100) * profitShareFactor; // Convert percentage to decimal
+
+    const rewardAmountPeso = (stakedAmountPeso * adjustedRewardRate * stakeDurationDays) / 30;
 
     return rewardAmountPeso;
   }
@@ -82,6 +77,17 @@ class CryptoEpochRewards {
             [(ngModel)]="endDate"
             (ngModelChange)="calculateReward()"
           >
+        </div>
+
+        <div class="form-group">
+          <label for="monthlyRewardRate">Epoch/Monthly Reward Rate (%):</label>
+          <input
+            type="number"
+            id="monthlyRewardRate"
+            [(ngModel)]="monthlyRewardRate"
+            (ngModelChange)="calculateReward()"
+            placeholder="Enter monthly rate e.g., 1 for 1%"
+            step="0.01">
         </div>
 
         <div class="form-group">
@@ -165,7 +171,8 @@ export class App {
 
   stakedAmount: number = 10000;
   startDate: string = new Date().toISOString().split('T')[0];
-  endDate: string = new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0];
+  endDate: string = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  monthlyRewardRate: number = 10.5;
   profitShare: number = 101591068;
   marketCap: number = 3753480698;
   calculatedReward: number = 0;
@@ -181,8 +188,9 @@ export class App {
         start: new Date(this.startDate),
         finish: new Date(this.endDate)
       },
-      this.profitShare,
-      this.marketCap
+      this.monthlyRewardRate,
+      this.marketCap,
+      this.profitShare
     );
   }
 
